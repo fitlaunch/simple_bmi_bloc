@@ -1,6 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-class MyStats extends StatelessWidget {
+import '../blocs/bmi/bmi_bloc.dart';
+import '../blocs/bmi/bmi_event.dart';
+import '../blocs/bmr/bmr_bloc.dart';
+import '../blocs/bmr/bmr_event.dart';
+
+class MyStats extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    return _MyStatsEvent();
+  }
+}
+
+class _MyStatsEvent extends State<MyStats> {
+
+  final _weightController = TextEditingController();
+  final _heightController = TextEditingController();
+  final _ageController = TextEditingController();
+  SingingCharacter _genderSelect = SingingCharacter.female;
+  String _activityLevel = 'x1.2 - Sedentary';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,30 +37,77 @@ class MyStats extends StatelessWidget {
                 'what\'s your bmi?',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              heightField(),
+              heightField(_heightController),
               SizedBox(height: 5),
-              weightField(),
+              weightField(_weightController),
               SizedBox(height: 15),
-              submitButton(context),
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: MaterialButton(
+                  child: Text('Save & Calc BMI'),
+                  onPressed: () {
+                    BlocProvider.of<BmiBloc>(context).add(
+                      BmiEvent(
+                        _weightController.text, 
+                        _heightController.text
+                      )
+                    );
+                    BlocProvider.of<BmrBloc>(context).add(
+                      BmrEvent(
+                        _weightController.text, 
+                        _heightController.text, 
+                        _ageController.text, 
+                        _activityLevel, 
+                        _genderSelect == SingingCharacter.male ? true : false
+                      )
+                    );
+                    Navigator.pushNamed(context, '/bmi_display');
+                  },
+                  color: Colors.pink.shade200,
+                ),
+              ),
               SizedBox(height: 20),
               Divider(),
               Text(
                 'what\'s your bmr?',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              GenderSelect(),
-              ageField(),
+              GenderSelect((value) {
+                setState(() {
+                  _genderSelect = value;
+                });
+              }),
+              ageField(_ageController),
               SizedBox(height: 10),
               Text(
                 'What is today\'s activity level',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              ActivityDropDown(),
+              ActivityDropDown((newActivity) {
+                setState(() {
+                  _activityLevel = newActivity;
+                });
+              }),
               SizedBox(height: 15),
               submitAgeButton(context),
               SizedBox(height: 30),
               TextButton(
                   onPressed: () {
+                    BlocProvider.of<BmiBloc>(context).add(
+                      BmiEvent(
+                        _weightController.text, 
+                        _heightController.text
+                      )
+                    );
+                    BlocProvider.of<BmrBloc>(context).add(
+                      BmrEvent(
+                        _weightController.text, 
+                        _heightController.text, 
+                        _ageController.text, 
+                        _activityLevel, 
+                        _genderSelect == SingingCharacter.male ? true : false
+                      )
+                    );
                     Navigator.pushNamed(context, '/bmi_display');
                   },
                   child: Text('View All Results')),
@@ -52,13 +119,14 @@ class MyStats extends StatelessWidget {
   }
 }
 
-Widget weightField() {
+Widget weightField(TextEditingController controller) {
   return Padding(
     padding: const EdgeInsets.all(8.0),
     child: Material(
       borderRadius: BorderRadius.all(Radius.circular(10)),
       color: Colors.black12,
       child: TextField(
+        controller: controller,
         keyboardType: TextInputType.numberWithOptions(decimal: true),
         decoration: InputDecoration(
             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -71,13 +139,14 @@ Widget weightField() {
   );
 }
 
-Widget heightField() {
+Widget heightField(TextEditingController controller) {
   return Padding(
     padding: const EdgeInsets.all(8.0),
     child: Material(
       borderRadius: BorderRadius.all(Radius.circular(10)),
       color: Colors.black12,
       child: TextField(
+        controller: controller,
         keyboardType: TextInputType.numberWithOptions(decimal: true),
         decoration: InputDecoration(
             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -90,26 +159,14 @@ Widget heightField() {
   );
 }
 
-Widget submitButton(BuildContext context) {
-  return Padding(
-    padding: const EdgeInsets.only(top: 10),
-    child: MaterialButton(
-      child: Text('Save & Calc BMI'),
-      onPressed: () {
-        Navigator.pushNamed(context, '/bmi_display');
-      },
-      color: Colors.pink.shade200,
-    ),
-  );
-}
-
-Widget ageField() {
+Widget ageField(TextEditingController controller) {
   return Padding(
     padding: const EdgeInsets.all(8.0),
     child: Material(
       borderRadius: BorderRadius.all(Radius.circular(10)),
       color: Colors.black12,
       child: TextField(
+        controller: controller,
         keyboardType: TextInputType.numberWithOptions(decimal: true),
         decoration: InputDecoration(
             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -136,7 +193,9 @@ Widget submitAgeButton(BuildContext context) {
 
 //what activity level (needs submit or submit on selection)
 class ActivityDropDown extends StatefulWidget {
-  const ActivityDropDown({Key key}) : super(key: key);
+  final Function(String) onChangeActivity;
+
+  ActivityDropDown(this.onChangeActivity);
 
   @override
   _ActivityDropDownState createState() => _ActivityDropDownState();
@@ -161,6 +220,7 @@ class _ActivityDropDownState extends State<ActivityDropDown> {
         setState(() {
           dropdownValue = newValue;
         });
+        widget.onChangeActivity(newValue);
       },
       items: <String>[
         'x1.2 - Sedentary',
@@ -184,7 +244,9 @@ class _ActivityDropDownState extends State<ActivityDropDown> {
 enum SingingCharacter { female, male }
 
 class GenderSelect extends StatefulWidget {
-  const GenderSelect({Key key}) : super(key: key);
+  final Function(SingingCharacter) onChangeGender;
+
+  const GenderSelect(this.onChangeGender);
 
   @override
   _GenderSelectState createState() => _GenderSelectState();
@@ -206,6 +268,7 @@ class _GenderSelectState extends State<GenderSelect> {
               setState(() {
                 _character = value;
               });
+              widget.onChangeGender(value);
             },
           ),
         ),
@@ -218,6 +281,7 @@ class _GenderSelectState extends State<GenderSelect> {
               setState(() {
                 _character = value;
               });
+              widget.onChangeGender(value);
             },
           ),
         ),

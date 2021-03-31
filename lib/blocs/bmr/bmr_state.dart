@@ -1,10 +1,18 @@
-part of 'bmr_bloc.dart';
+import 'package:flutter/cupertino.dart';
 
-abstract class BmrState extends Equatable {
-  const BmrState();
+@immutable
+abstract class BmrState {}
+
+class BmrInitial extends BmrState {}
+
+class BmrResult extends BmrState {
+  final double bmr;
+
+  BmrResult(this.bmr);
 }
 
-class BmrInitial extends BmrState {
-  @override
-  List<Object> get props => [];
+class BmrError extends BmrState {
+  final String error;
+
+  BmrError(this.error);
 }

@@ -1,4 +1,9 @@
-part of 'bmi_bloc.dart';
+import 'package:flutter/cupertino.dart';
 
 @immutable
-abstract class BmiEvent {}
+class BmiEvent {
+  final String weight;
+  final String height;
+
+  BmiEvent(this.weight, this.height);
+}
